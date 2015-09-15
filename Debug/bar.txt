@@ -1,0 +1,3 @@
+this is an example bar.txt
+
+please attempt to transfer it
