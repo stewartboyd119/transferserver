@@ -117,9 +117,10 @@ int main(int argc, char **argv) {
 
 void open_file_and_write (int sock, char * filename)
 {
-
     int fhandle_open;
-    char buffer[1];
+    int bytes_read;
+    int bytes_written;
+    char buffer[256];
 
     fhandle_open = open(filename, O_RDONLY, S_IREAD);
     if (fhandle_open == -1){
@@ -127,11 +128,25 @@ void open_file_and_write (int sock, char * filename)
     }
 
     bzero(buffer,sizeof(buffer));
-    while (read(fhandle_open, (void *)buffer, sizeof(buffer)) != 0){
-		if (write(sock, (void *)buffer, sizeof(buffer)) == -1){
-			error("ERROR writing to socket");
-    	}
-    }
+    while (1){
+		bytes_read = read(fhandle_open, (void *)buffer, sizeof(buffer));
+		printf("number of bytes read %d\n", bytes_read);
+		if (bytes_read == 0){
+			break;
+		}
+		else if (bytes_read == -1){
+			error("Error reading file");
+		}
+		void *p = buffer;
+		while (bytes_read > 0){
+			bytes_written = write(sock, p, bytes_read);
+			if (bytes_written <= 0){
+				error("ERROR writing to socket");
+			}
+			bytes_read -= bytes_written;
+			p+=bytes_written;
+		}
+	}
     close(fhandle_open);
 }
 void error(const char *msg){
