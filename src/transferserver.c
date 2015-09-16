@@ -8,7 +8,6 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <fcntl.h>
-
 #include <sys/stat.h>
 
 
@@ -81,54 +80,38 @@ int main(int argc, char **argv) {
 
   /* Socket Code Here */
   int sockfd, newsockfd;
-   //char buffer[256];
-   socklen_t clilen;
-   struct sockaddr_in serv_addr, cli_addr;
+  //char buffer[256];
+  socklen_t clilen;
+  struct sockaddr_in serv_addr, cli_addr;
 
-   sockfd = socket(AF_INET, SOCK_STREAM, 0);
-   if (sockfd < 0)
-      error("ERROR opening socket");
-   bzero((char *) &serv_addr, sizeof(serv_addr));
-   serv_addr.sin_family = AF_INET;
-   serv_addr.sin_addr.s_addr = INADDR_ANY;
-   serv_addr.sin_port = htons(portno);
+  sockfd = socket(AF_INET, SOCK_STREAM, 0);
+  if (sockfd < 0)
+	  error("ERROR opening socket");
+  bzero((char *) &serv_addr, sizeof(serv_addr));
+  serv_addr.sin_family = AF_INET;
+  serv_addr.sin_addr.s_addr = INADDR_ANY;
+  serv_addr.sin_port = htons(portno);
 
-   if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) == -1){
- 	  error("Error on setting options");
+  if (setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) == -1){
+	  error("Error on setting options");
    }
-   if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
-            error("ERROR on binding");
-   }
-   if (listen(sockfd,5) == -1){
- 	  error("ERROR on listen");
-   }
-   clilen = sizeof(cli_addr);
+  if (bind(sockfd, (struct sockaddr *) &serv_addr, sizeof(serv_addr)) < 0){
+          error("ERROR on binding");
+  }
+  if (listen(sockfd,5) == -1){
+	  error("ERROR on listen");
+  }
+  clilen = sizeof(cli_addr);
 
+  newsockfd = accept(sockfd, (struct sockaddr *) &cli_addr, &clilen);
+  if (newsockfd < 0){
+	  error("ERROR on accept");
+  }
+  open_file_and_write(newsockfd, filename);
 
-   //while (1) {
-       newsockfd = accept(sockfd,
-             (struct sockaddr *) &cli_addr, &clilen);
-       if (newsockfd < 0){
-    	   printf("stewy was here\n");
-           error("ERROR on accept");
-       }
-       //pid = fork();
-       //if (pid < 0)
-       //   error("ERROR on fork");
-       //if (pid == 0)  {
-	   //close(sockfd);
-       //write(newsockfd, (void *)"stew", sizeof("stew"));
-	   open_file_and_write(newsockfd, filename);
-
-           //exit(0);
-       //}http://stackoverflow.com/questions/10666789/error-bad-address-when-reading-from-message-queue-on-linux
-       //else
-       close(newsockfd);
-   //} /* end of while */
-
-   //close(newsockfd);
-   close(sockfd);
-   return EXIT_SUCCESS;
+  close(newsockfd);
+  close(sockfd);
+  return EXIT_SUCCESS;
 
  }
 
@@ -137,7 +120,6 @@ void open_file_and_write (int sock, char * filename)
 
     int fhandle_open;
     char buffer[1];
-    int num_loops = 0;
 
     fhandle_open = open(filename, O_RDONLY, S_IREAD);
     if (fhandle_open == -1){
@@ -146,8 +128,6 @@ void open_file_and_write (int sock, char * filename)
 
     bzero(buffer,sizeof(buffer));
     while (read(fhandle_open, (void *)buffer, sizeof(buffer)) != 0){
-    	printf("buffer = %s\n", buffer);
-    	printf("number of loops = %i\n", num_loops++);
 		if (write(sock, (void *)buffer, sizeof(buffer)) == -1){
 			error("ERROR writing to socket");
     	}
